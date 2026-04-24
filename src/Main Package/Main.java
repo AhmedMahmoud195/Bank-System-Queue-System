@@ -26,6 +26,7 @@ public class Main {
             int choice = scanner.nextInt();
 
             if (choice == 1) {
+                System.out.println("please enter(-) between the first & last name :");
                 System.out.print("Enter Name: ");
                 String name = scanner.next();
                 System.out.print("Is VIP? (1=Yes, 0=No): ");

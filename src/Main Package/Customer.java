@@ -1,22 +1,24 @@
+package MainPackage;
+
 public class Customer extends Person {
     private Account account;
 
-    // FIX: Passing 3 arguments to super(name, id, phone)
     public Customer(String name, String nationalID, String phone, Account account) {
-        super(name, nationalID, phone); 
+        super(name, nationalID, phone); // Passes data to the abstract Person class
         this.account = account;
     }
 
     public Account getAccount() { return account; }
-    
+
+    // Fulfilling the abstract method contract
     @Override
-    public String toString() {
-        // FIX: Using getNationalID() instead of getId()
-        return "Customer ID: " + getNationalID() + " | Name: " + getName(); 
+    public String getRole() {
+        return "Customer";
     }
 
+    // Overriding the interface method to include Account info
     @Override
-    public void printDetails() {
-        System.out.println(toString());
+    public String getDisplayDetails() {
+        return super.getDisplayDetails() + " | Account No: " + account.getAccountNumber();
     }
 }

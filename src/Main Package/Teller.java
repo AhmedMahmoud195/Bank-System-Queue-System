@@ -1,8 +1,9 @@
+package MainPackage;
+
 public class Teller extends Person {
     private String employeeID;
     private int experienceYears;
 
-    // FIX: Removed 'void'. Added 5 parameters. Passed 3 to super().
     public Teller(String name, String nationalID, String phone, String employeeID, int experienceYears) {
         super(name, nationalID, phone);
         this.employeeID = employeeID;
@@ -11,12 +12,15 @@ public class Teller extends Person {
 
     public String getEmployeeID() { return employeeID; }
 
-    public void serveCustomer(){
-        System.out.println("Teller: " + getName() + " is serving.");
+    // Fulfilling the abstract method contract
+    @Override
+    public String getRole() {
+        return "Bank Teller";
     }
 
+    // Overriding the interface method to include Employee ID
     @Override
-    public void printDetails() {
-        System.out.println("Teller: " + getName());
+    public String getDisplayDetails() {
+        return super.getDisplayDetails() + " | Employee ID: " + employeeID;
     }
 }

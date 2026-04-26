@@ -1,5 +1,6 @@
-public class Account {
+package MainPackage;
 
+public class Account {
     private String accountNumber;
     private double balance;
 
@@ -7,29 +8,37 @@ public class Account {
         this.accountNumber = accountNumber;
         this.balance = balance;
     }
-    public void deposit(double amount) {
 
-            balance += amount;
-            System.out.println("Deposited: " + amount );
-        
+    public void deposit(double amount) {
+        // Exception Handling: Prevent negative deposits
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Deposit amount must be greater than zero.");
+        }
+        balance += amount;
+        System.out.println("Deposited: " + amount);
     }
-    
+
     public void deposit(double amount, String note) {
-    balance += amount;
-    System.out.println("Deposited: " + amount + " - Reason: " + note);
-}
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Deposit amount must be greater than zero.");
+        }
+        balance += amount;
+        System.out.println("Deposited: " + amount + " - Reason: " + note);
+    }
 
     public void withdraw(double amount) {
-
-            if (amount <= balance) {
-                balance -= amount;
-                System.out.println("Withdrew: " + amount );
-            } else {
-                System.out.println("Insufficient funds for withdrawal of: " + amount );
-            }
+        // Exception Handling: Prevent overdrafts or negative withdrawals
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Withdrawal amount must be greater than zero.");
         }
-
-        public String getAccountNumber() {
-            return accountNumber;
+        if (amount > balance) {
+            // Custom exception logic
+            throw new IllegalStateException("Insufficient funds for withdrawal of: " + amount);
         }
+        balance -= amount;
+        System.out.println("Withdrawn: " + amount);
+    }
+
+    public String getAccountNumber() { return accountNumber; }
+    public double getBalance() { return balance; }
 }

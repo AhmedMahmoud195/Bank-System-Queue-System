@@ -1,5 +1,5 @@
 # Bank Queue System
-Final project for 2201 - Object Oriented Programming
+Final project for 3201 - Advanced Programming
 # 🏦 Bank Queue Management System
 
 ![Language](https://img.shields.io/badge/Language-[JAVA]-blue.svg)

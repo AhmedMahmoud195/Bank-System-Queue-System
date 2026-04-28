@@ -2,8 +2,8 @@
 Final project for 2201 - Object Oriented Programming
 # 🏦 Bank Queue Management System
 
-![Language](https://img.shields.io/badge/Language-[Your_Language_Here]-blue.svg)
-![Topic](https://img.shields.io/badge/Topic-Data%20Structures-brightgreen.svg)
+![Language](https://img.shields.io/badge/Language-[JAVA]-blue.svg)
+![Topic](https://img.shields.io/badge/Topic-Advanced%20Programming/-brightgreen.svg)
 ![Topic](https://img.shields.io/badge/Topic-System%20Simulation-orange.svg)
 
 A robust command-line application that simulates a real-world bank queueing system. This project demonstrates the practical implementation of core Data Structures—specifically **Queues (FIFO)**—to manage customer flow, optimize waiting times, and handle teller assignments efficiently.

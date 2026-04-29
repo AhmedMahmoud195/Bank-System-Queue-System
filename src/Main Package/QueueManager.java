@@ -1,50 +1,38 @@
-import java.util.*;
+package MainPackage;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class QueueManager {
-    private List<Ticket> waitinglist;
+    private List<Ticket> waitingList;
 
     public QueueManager() {
-        waitinglist = new ArrayList<>();
+        waitingList = new ArrayList<>();
     }
 
-    public void addTicket(Ticket t){
-        waitinglist.add(t);
+    public void addTicket(Ticket t) {
+        waitingList.add(t);
+        sortQueue(); // Automatically sorts perfectly every time a ticket is added
     }
 
-    public void sortQueue(){
-        int n = waitinglist.size();
-        for(int i=0 ; i < n-1 ; i++){
-            for(int j=0 ; j < n-i-1 ; j++){
-                Ticket current = waitinglist.get(j);
-                Ticket next = waitinglist.get(j+1);
-
-                // FIX: Used '<' for Descending order (VIP first)
-                if(current.getPriority() < next.getPriority()){
-                    swapTickets(j , j+1);
-                } 
-                else if (current.getPriority() == next.getPriority() && current.getTicketNo() > next.getTicketNo()) {
-                    swapTickets(j, j+1);
-                }
+    public void sortQueue() {
+        // Bulletproof sorting logic:
+        waitingList.sort((t1, t2) -> {
+            if (t1.getPriority() != t2.getPriority()) {
+                // Priority 2 (VIP) ALWAYS comes before Priority 1 (REG)
+                return Integer.compare(t2.getPriority(), t1.getPriority()); 
             }
-        }
-        System.out.println("Queue sorted by Priority.");
+            // If they have the same priority, the lower Ticket Number goes first
+            return Integer.compare(t1.getTicketNo(), t2.getTicketNo());
+        });
     }
 
-    private void swapTickets(int n1 , int n2){
-        Ticket temp = waitinglist.get(n1);
-        waitinglist.set(n1 , waitinglist.get(n2));
-        waitinglist.set(n2 , temp);
-    }
-
-    public Ticket callNext(){
-        if(waitinglist.isEmpty()){
-            return null;
-        }
-        // FIX: Removed "index:" text. It is just remove(0).
-        return waitinglist.remove(0);
+    public Ticket callNext() {
+        if (waitingList.isEmpty()) return null;
+        return waitingList.remove(0);
     }
 
     public List<Ticket> getWaitingList() {
-        return new ArrayList<>(waitinglist);
+        return new ArrayList<>(waitingList);
     }
 }

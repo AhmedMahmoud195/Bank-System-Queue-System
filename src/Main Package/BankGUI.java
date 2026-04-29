@@ -1,5 +1,3 @@
-package MainPackage;
-
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.TranslateTransition;
@@ -77,21 +75,21 @@ public class BankGUI extends Application {
         nowServingContainer.setAlignment(Pos.CENTER);
         nowServingContainer.setPadding(new Insets(20));
         nowServingContainer.setStyle("-fx-background-color: #1e293b; -fx-background-radius: 15; -fx-border-color: #10b981; -fx-border-width: 2; -fx-border-radius: 15;");
-        
+
         Label servingHeader = new Label("NOW SERVING");
         servingHeader.setStyle("-fx-text-fill: #10b981; -fx-font-weight: bold; -fx-font-size: 14px;");
         servingNameLabel = new Label("Awaiting Customers...");
         servingNameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;");
         servingTicketLabel = new Label("--");
         servingTicketLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 16px;");
-        
+
         nowServingContainer.getChildren().addAll(servingHeader, servingNameLabel, servingTicketLabel);
 
         Label queueHeader = new Label("Current Queue");
         queueHeader.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 18px; -fx-font-weight: bold;");
-        
+
         visualQueueList = new VBox(15);
-        
+
         rightPanel.getChildren().addAll(nowServingContainer, queueHeader, visualQueueList);
 
         // ================= EVENT HANDLERS =================
@@ -104,16 +102,16 @@ public class BankGUI extends Application {
 
             Account newAcc = new Account("ACC" + ticketCounterID, 1000.0);
             Customer newCust = new Customer(name, "ID" + ticketCounterID, "000", newAcc);
-            
+
             // Use the new overloaded constructor
             Ticket newTicket = new Ticket(ticketCounterID, newCust, priority, selectedService);
-            
+
             qManager.addTicket(newTicket);
-            DatabaseHelper.saveTicketToDB(name, priority); // (Optional: You can update DB later, keeping it simple for now)
-            
+            DatabaseHelper.saveTicketToDB(name, priority,selectedService); // (Optional: You can update DB later, keeping it simple for now)
+
             int exactIndex = qManager.getWaitingList().indexOf(newTicket);
             addCardToVisualQueue(newTicket, exactIndex);
-            
+
             ticketCounterID++;
             nameInput.clear();
             vipCheckBox.setSelected(false);
@@ -124,7 +122,7 @@ public class BankGUI extends Application {
             if (qManager.getWaitingList().isEmpty()) return;
 
             callNextBtn.setDisable(true);
-            
+
             Ticket t = qManager.callNext();
             if (t != null) {
                 updateNowServing(t);
@@ -145,17 +143,17 @@ public class BankGUI extends Application {
         card.setId("card_" + ticket.getTicketNo());
         card.setAlignment(Pos.CENTER_LEFT);
         card.setPadding(new Insets(15, 20, 15, 20));
-        
+
         String borderColor = ticket.getPriority() == 2 ? "#fbbf24" : "#334155";
         card.setStyle("-fx-background-color: #1e293b; -fx-background-radius: 10; -fx-border-color: " + borderColor + "; -fx-border-radius: 10; -fx-border-width: 2;");
-        
+
         DropShadow shadow = new DropShadow(10, Color.rgb(0,0,0,0.3));
         card.setEffect(shadow);
 
         Label idLbl = new Label("#" + ticket.getTicketNo());
         idLbl.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 18px; -fx-font-weight: bold;");
-        
-        Label nameLbl = new Label(ticket.getOwner().getName()); 
+
+        Label nameLbl = new Label(ticket.getOwner().getName());
         nameLbl.setStyle("-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;");
 
         Region spacer = new Region();
@@ -164,7 +162,7 @@ public class BankGUI extends Application {
         // NEW: Display the service type on the card
         Label serviceLbl = new Label(ticket.getServiceType());
         serviceLbl.setStyle("-fx-text-fill: #cbd5e1; -fx-font-size: 14px; -fx-font-style: italic;");
-        
+
         Label statusLbl = new Label(ticket.getPriority() == 2 ? "VIP" : "REG");
         statusLbl.setStyle("-fx-text-fill: " + borderColor + "; -fx-font-weight: bold; -fx-font-size: 14px;");
 
@@ -178,12 +176,12 @@ public class BankGUI extends Application {
 
         card.setTranslateX(100);
         card.setOpacity(0);
-        
+
         TranslateTransition tt = new TranslateTransition(Duration.millis(300), card);
         tt.setToX(0);
         FadeTransition ft = new FadeTransition(Duration.millis(300), card);
         ft.setToValue(1);
-        
+
         ParallelTransition pt = new ParallelTransition(tt, ft);
         pt.play();
     }
@@ -196,13 +194,13 @@ public class BankGUI extends Application {
                 break;
             }
         }
-        
+
         if (targetCard != null) {
             TranslateTransition tt = new TranslateTransition(Duration.millis(250), targetCard);
             tt.setToX(-100);
             FadeTransition ft = new FadeTransition(Duration.millis(250), targetCard);
             ft.setToValue(0);
-            
+
             ParallelTransition pt = new ParallelTransition(tt, ft);
             HBox finalTarget = targetCard;
             pt.setOnFinished(event -> {
@@ -216,10 +214,10 @@ public class BankGUI extends Application {
     }
 
     private void updateNowServing(Ticket t) {
-        servingNameLabel.setText(t.getOwner().getName()); 
+        servingNameLabel.setText(t.getOwner().getName());
         // NEW: Added the service type to the serving banner
         servingTicketLabel.setText("Ticket #" + t.getTicketNo() + " (" + (t.getPriority() == 2 ? "VIP" : "Regular") + ") - " + t.getServiceType());
-        
+
         FadeTransition ft = new FadeTransition(Duration.millis(150), nowServingContainer);
         ft.setFromValue(0.5);
         ft.setToValue(1.0);

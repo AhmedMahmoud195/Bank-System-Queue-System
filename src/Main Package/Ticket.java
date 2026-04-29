@@ -1,4 +1,4 @@
-package MainPackage;
+
 
 public class Ticket {
     private int ticketNo;

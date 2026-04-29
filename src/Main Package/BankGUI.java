@@ -1,4 +1,4 @@
-package MainPackage;
+//package MainPackage;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -62,7 +62,7 @@ public class BankGUI extends Application {
         callNextBtn.setOnAction(e -> {
             Ticket t = qManager.callNext();
             if (t != null) {
-                consoleOutput.appendText("Serving Ticket #" + t.getTicketNo() + " (" + t.getCustomer().getName() + ")\n");
+                consoleOutput.appendText("Serving Ticket #" + t.getTicketNo() + " (" + t.getOwner().getName() + ")\n");
             } else {
                 consoleOutput.appendText("Queue is empty.\n");
             }

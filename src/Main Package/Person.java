@@ -1,4 +1,4 @@
-package MainPackage;
+//package MainPackage;
 
 public abstract class Person implements IDisplayable {
     protected String name;

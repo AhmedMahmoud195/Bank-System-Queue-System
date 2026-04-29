@@ -1,4 +1,4 @@
-//package MainPackage;
+package MainPackage;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -7,60 +7,38 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseHelper {
-    private static final String URL = "jdbc:oracle:thin:@localhost:1521:XE";
-    private static final String USERNAME = "DB209";
-    private static final String PASSWORD = "DB209";
+    private static final String URL = "jdbc:sqlite:bank_queue.db";
 
     public static void initializeDatabase() {
-        String createSequenceSQL = "CREATE SEQUENCE tickets_seq " +
-                "START WITH 1 " +
-                "INCREMENT BY 1 " +
-                "NOCACHE " +
-                "NOCYCLE";
+        // NEW: Added 'service_type' to the table schema
+        String createTableSQL = "CREATE TABLE IF NOT EXISTS tickets (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "customer_name TEXT NOT NULL, " +
+                "priority INTEGER NOT NULL, " +
+                "service_type TEXT NOT NULL);"; 
 
-
-        String createTableSQL = "CREATE TABLE tickets (" +
-                "id NUMBER PRIMARY KEY, " +
-                "customer_name VARCHAR2(100) NOT NULL, " +
-                "priority NUMBER(10) NOT NULL)";
-
-        try (Connection conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        try (Connection conn = DriverManager.getConnection(URL);
              Statement stmt = conn.createStatement()) {
-            try {
-                stmt.execute(createSequenceSQL);
-                System.out.println("Sequence created successfully.");
-            } catch (SQLException e) {
-                if (e.getErrorCode() == 955) { // already exists
-                    System.out.println("Sequence already exists.");
-                }
-            }
-
-
-            try {
-                stmt.execute(createTableSQL);
-                System.out.println("Table created successfully.");
-            } catch (SQLException e) {
-                if (e.getErrorCode() == 955) { // already exists
-                    System.out.println("Table already exists.");
-                }
-            }
-
+            stmt.execute(createTableSQL);
+            System.out.println("Database initialized successfully.");
         } catch (SQLException e) {
             System.out.println("Database Error: " + e.getMessage());
         }
     }
 
-    public static void saveTicketToDB(String customerName, int priority){
-        String insertSQL = "INSERT INTO tickets(id, customer_name, priority) " +
-                "VALUES(tickets_seq.NEXTVAL, ?, ?)";
+    // NEW: Added 'String serviceType' to the parameters
+    public static void saveTicketToDB(String customerName, int priority, String serviceType) {
+        // NEW: Updated SQL to expect 3 values instead of 2
+        String insertSQL = "INSERT INTO tickets(customer_name, priority, service_type) VALUES(?, ?, ?)";
 
-        try (Connection conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        try (Connection conn = DriverManager.getConnection(URL);
              PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
-
+            
             pstmt.setString(1, customerName);
             pstmt.setInt(2, priority);
+            pstmt.setString(3, serviceType); // NEW: Bind the service type to the database
             pstmt.executeUpdate();
-
+            
         } catch (SQLException e) {
             System.out.println("Failed to save ticket: " + e.getMessage());
         }

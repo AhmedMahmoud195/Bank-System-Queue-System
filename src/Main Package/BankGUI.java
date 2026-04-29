@@ -34,7 +34,7 @@ public class BankGUI extends Application {
         root.setPadding(new Insets(40));
         root.setStyle("-fx-background-color: #0f172a; -fx-font-family: 'Segoe UI', sans-serif;");
 
-        // LEFT PANEL
+        // ================= LEFT PANEL =================
         VBox leftPanel = new VBox(20);
         leftPanel.setPrefWidth(350);
         leftPanel.setStyle("-fx-background-color: #1e293b; -fx-background-radius: 15; -fx-border-color: #334155; -fx-border-radius: 15; -fx-border-width: 1;");
@@ -47,6 +47,13 @@ public class BankGUI extends Application {
         nameInput.setPromptText("Enter Customer Name...");
         nameInput.setStyle("-fx-background-color: #0f172a; -fx-text-fill: white; -fx-prompt-text-fill: #64748b; -fx-padding: 10; -fx-background-radius: 8; -fx-border-color: #334155; -fx-border-radius: 8;");
 
+        // NEW: Service Selection Dropdown
+        ComboBox<String> serviceDropdown = new ComboBox<>();
+        serviceDropdown.getItems().addAll("Withdraw", "Deposit", "Customer Service", "Account Management");
+        serviceDropdown.getSelectionModel().selectFirst(); // Selects "Withdraw" by default
+        serviceDropdown.setMaxWidth(Double.MAX_VALUE);
+        serviceDropdown.setStyle("-fx-background-color: #0f172a; -fx-text-fill: white; -fx-padding: 5; -fx-background-radius: 8; -fx-border-color: #334155; -fx-border-radius: 8;");
+
         CheckBox vipCheckBox = new CheckBox("VIP Customer (Priority Status)");
         vipCheckBox.setStyle("-fx-text-fill: #fbbf24; -fx-font-weight: bold;");
 
@@ -58,12 +65,13 @@ public class BankGUI extends Application {
         callNextBtn.setMaxWidth(Double.MAX_VALUE);
         callNextBtn.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 12; -fx-background-radius: 8; -fx-cursor: hand;");
 
-        leftPanel.getChildren().addAll(headerLabel, nameInput, vipCheckBox, addBtn, new Region(), callNextBtn);
-        VBox.setVgrow(leftPanel.getChildren().get(4), Priority.ALWAYS);
+        // Add the new dropdown to the panel
+        leftPanel.getChildren().addAll(headerLabel, nameInput, serviceDropdown, vipCheckBox, addBtn, new Region(), callNextBtn);
+        VBox.setVgrow(leftPanel.getChildren().get(5), Priority.ALWAYS); // Spacer
 
-        // RIGHT PANEL
+        // ================= RIGHT PANEL =================
         VBox rightPanel = new VBox(30);
-        rightPanel.setPrefWidth(400);
+        rightPanel.setPrefWidth(450); // Made slightly wider to fit the new service text
 
         nowServingContainer = new VBox(10);
         nowServingContainer.setAlignment(Pos.CENTER);
@@ -86,18 +94,22 @@ public class BankGUI extends Application {
         
         rightPanel.getChildren().addAll(nowServingContainer, queueHeader, visualQueueList);
 
-        // EVENT HANDLERS
+        // ================= EVENT HANDLERS =================
         addBtn.setOnAction(e -> {
             String name = nameInput.getText();
             if (name.trim().isEmpty()) return;
 
             int priority = vipCheckBox.isSelected() ? 2 : 1;
+            String selectedService = serviceDropdown.getValue(); // Get the chosen service
+
             Account newAcc = new Account("ACC" + ticketCounterID, 1000.0);
             Customer newCust = new Customer(name, "ID" + ticketCounterID, "000", newAcc);
-            Ticket newTicket = new Ticket(ticketCounterID, newCust, priority);
             
-            qManager.addTicket(newTicket); // Backend handles perfect sorting now
-            DatabaseHelper.saveTicketToDB(name, priority);
+            // Use the new overloaded constructor
+            Ticket newTicket = new Ticket(ticketCounterID, newCust, priority, selectedService);
+            
+            qManager.addTicket(newTicket);
+            DatabaseHelper.saveTicketToDB(name, priority); // (Optional: You can update DB later, keeping it simple for now)
             
             int exactIndex = qManager.getWaitingList().indexOf(newTicket);
             addCardToVisualQueue(newTicket, exactIndex);
@@ -105,31 +117,32 @@ public class BankGUI extends Application {
             ticketCounterID++;
             nameInput.clear();
             vipCheckBox.setSelected(false);
+            serviceDropdown.getSelectionModel().selectFirst(); // Reset dropdown
         });
 
         callNextBtn.setOnAction(e -> {
             if (qManager.getWaitingList().isEmpty()) return;
 
-            callNextBtn.setDisable(true); // Lock button to prevent double-click desyncs
+            callNextBtn.setDisable(true);
             
             Ticket t = qManager.callNext();
             if (t != null) {
                 updateNowServing(t);
-                removeCardFromUI(t, callNextBtn); // Remove by exact ID
+                removeCardFromUI(t, callNextBtn);
             } else {
                 callNextBtn.setDisable(false);
             }
         });
 
         root.getChildren().addAll(leftPanel, rightPanel);
-        Scene scene = new Scene(root, 850, 650);
+        Scene scene = new Scene(root, 900, 650); // Made window slightly wider
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
     private void addCardToVisualQueue(Ticket ticket, int insertIndex) {
-        HBox card = new HBox(20);
-        card.setId("card_" + ticket.getTicketNo()); // Assign a unique ID to the visual card
+        HBox card = new HBox(15);
+        card.setId("card_" + ticket.getTicketNo());
         card.setAlignment(Pos.CENTER_LEFT);
         card.setPadding(new Insets(15, 20, 15, 20));
         
@@ -147,11 +160,15 @@ public class BankGUI extends Application {
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        // NEW: Display the service type on the card
+        Label serviceLbl = new Label(ticket.getServiceType());
+        serviceLbl.setStyle("-fx-text-fill: #cbd5e1; -fx-font-size: 14px; -fx-font-style: italic;");
         
         Label statusLbl = new Label(ticket.getPriority() == 2 ? "VIP" : "REG");
         statusLbl.setStyle("-fx-text-fill: " + borderColor + "; -fx-font-weight: bold; -fx-font-size: 14px;");
 
-        card.getChildren().addAll(idLbl, nameLbl, spacer, statusLbl);
+        card.getChildren().addAll(idLbl, nameLbl, spacer, serviceLbl, statusLbl);
 
         if (insertIndex >= 0 && insertIndex <= visualQueueList.getChildren().size()) {
             visualQueueList.getChildren().add(insertIndex, card);
@@ -173,8 +190,6 @@ public class BankGUI extends Application {
 
     private void removeCardFromUI(Ticket t, Button callNextBtn) {
         HBox targetCard = null;
-        
-        // Search the visual list for the exact card that matches the ticket
         for (Node node : visualQueueList.getChildren()) {
             if (("card_" + t.getTicketNo()).equals(node.getId())) {
                 targetCard = (HBox) node;
@@ -192,7 +207,7 @@ public class BankGUI extends Application {
             HBox finalTarget = targetCard;
             pt.setOnFinished(event -> {
                 visualQueueList.getChildren().remove(finalTarget);
-                callNextBtn.setDisable(false); // Unlock button after animation finishes
+                callNextBtn.setDisable(false);
             });
             pt.play();
         } else {
@@ -202,7 +217,8 @@ public class BankGUI extends Application {
 
     private void updateNowServing(Ticket t) {
         servingNameLabel.setText(t.getOwner().getName()); 
-        servingTicketLabel.setText("Ticket #" + t.getTicketNo() + " (" + (t.getPriority() == 2 ? "VIP" : "Regular") + ")");
+        // NEW: Added the service type to the serving banner
+        servingTicketLabel.setText("Ticket #" + t.getTicketNo() + " (" + (t.getPriority() == 2 ? "VIP" : "Regular") + ") - " + t.getServiceType());
         
         FadeTransition ft = new FadeTransition(Duration.millis(150), nowServingContainer);
         ft.setFromValue(0.5);

@@ -6,6 +6,7 @@ import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
@@ -90,17 +91,14 @@ public class BankGUI extends Application {
             String name = nameInput.getText();
             if (name.trim().isEmpty()) return;
 
-            // Match original backend logic (VIP = 2, REG = 1)
             int priority = vipCheckBox.isSelected() ? 2 : 1;
             Account newAcc = new Account("ACC" + ticketCounterID, 1000.0);
             Customer newCust = new Customer(name, "ID" + ticketCounterID, "000", newAcc);
             Ticket newTicket = new Ticket(ticketCounterID, newCust, priority);
             
-            qManager.addTicket(newTicket);
-            qManager.sortQueue(); // Explicitly sort the backend to keep it perfectly aligned with UI
+            qManager.addTicket(newTicket); // Backend handles perfect sorting now
             DatabaseHelper.saveTicketToDB(name, priority);
             
-            // Check the backend index, and force the visual card into that exact slot
             int exactIndex = qManager.getWaitingList().indexOf(newTicket);
             addCardToVisualQueue(newTicket, exactIndex);
             
@@ -110,10 +108,16 @@ public class BankGUI extends Application {
         });
 
         callNextBtn.setOnAction(e -> {
+            if (qManager.getWaitingList().isEmpty()) return;
+
+            callNextBtn.setDisable(true); // Lock button to prevent double-click desyncs
+            
             Ticket t = qManager.callNext();
             if (t != null) {
                 updateNowServing(t);
-                removeFirstCard();
+                removeCardFromUI(t, callNextBtn); // Remove by exact ID
+            } else {
+                callNextBtn.setDisable(false);
             }
         });
 
@@ -125,10 +129,10 @@ public class BankGUI extends Application {
 
     private void addCardToVisualQueue(Ticket ticket, int insertIndex) {
         HBox card = new HBox(20);
+        card.setId("card_" + ticket.getTicketNo()); // Assign a unique ID to the visual card
         card.setAlignment(Pos.CENTER_LEFT);
         card.setPadding(new Insets(15, 20, 15, 20));
         
-        // VIP priority is 2
         String borderColor = ticket.getPriority() == 2 ? "#fbbf24" : "#334155";
         card.setStyle("-fx-background-color: #1e293b; -fx-background-radius: 10; -fx-border-color: " + borderColor + "; -fx-border-radius: 10; -fx-border-width: 2;");
         
@@ -138,7 +142,7 @@ public class BankGUI extends Application {
         Label idLbl = new Label("#" + ticket.getTicketNo());
         idLbl.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 18px; -fx-font-weight: bold;");
         
-        Label nameLbl = new Label(ticket.getOwner().getName()); // FIXED: getOwner()
+        Label nameLbl = new Label(ticket.getOwner().getName()); 
         nameLbl.setStyle("-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;");
 
         Region spacer = new Region();
@@ -149,7 +153,6 @@ public class BankGUI extends Application {
 
         card.getChildren().addAll(idLbl, nameLbl, spacer, statusLbl);
 
-        // Place the card exactly where the backend queue says it belongs
         if (insertIndex >= 0 && insertIndex <= visualQueueList.getChildren().size()) {
             visualQueueList.getChildren().add(insertIndex, card);
         } else {
@@ -168,23 +171,37 @@ public class BankGUI extends Application {
         pt.play();
     }
 
-    private void removeFirstCard() {
-        if (visualQueueList.getChildren().isEmpty()) return;
+    private void removeCardFromUI(Ticket t, Button callNextBtn) {
+        HBox targetCard = null;
         
-        HBox topCard = (HBox) visualQueueList.getChildren().get(0);
+        // Search the visual list for the exact card that matches the ticket
+        for (Node node : visualQueueList.getChildren()) {
+            if (("card_" + t.getTicketNo()).equals(node.getId())) {
+                targetCard = (HBox) node;
+                break;
+            }
+        }
         
-        TranslateTransition tt = new TranslateTransition(Duration.millis(250), topCard);
-        tt.setToX(-100);
-        FadeTransition ft = new FadeTransition(Duration.millis(250), topCard);
-        ft.setToValue(0);
-        
-        ParallelTransition pt = new ParallelTransition(tt, ft);
-        pt.setOnFinished(event -> visualQueueList.getChildren().remove(topCard));
-        pt.play();
+        if (targetCard != null) {
+            TranslateTransition tt = new TranslateTransition(Duration.millis(250), targetCard);
+            tt.setToX(-100);
+            FadeTransition ft = new FadeTransition(Duration.millis(250), targetCard);
+            ft.setToValue(0);
+            
+            ParallelTransition pt = new ParallelTransition(tt, ft);
+            HBox finalTarget = targetCard;
+            pt.setOnFinished(event -> {
+                visualQueueList.getChildren().remove(finalTarget);
+                callNextBtn.setDisable(false); // Unlock button after animation finishes
+            });
+            pt.play();
+        } else {
+            callNextBtn.setDisable(false);
+        }
     }
 
     private void updateNowServing(Ticket t) {
-        servingNameLabel.setText(t.getOwner().getName()); // FIXED: getOwner()
+        servingNameLabel.setText(t.getOwner().getName()); 
         servingTicketLabel.setText("Ticket #" + t.getTicketNo() + " (" + (t.getPriority() == 2 ? "VIP" : "Regular") + ")");
         
         FadeTransition ft = new FadeTransition(Duration.millis(150), nowServingContainer);

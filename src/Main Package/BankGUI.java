@@ -90,15 +90,19 @@ public class BankGUI extends Application {
             String name = nameInput.getText();
             if (name.trim().isEmpty()) return;
 
-            int priority = vipCheckBox.isSelected() ? 1 : 2;
+            // Match original backend logic (VIP = 2, REG = 1)
+            int priority = vipCheckBox.isSelected() ? 2 : 1;
             Account newAcc = new Account("ACC" + ticketCounterID, 1000.0);
             Customer newCust = new Customer(name, "ID" + ticketCounterID, "000", newAcc);
             Ticket newTicket = new Ticket(ticketCounterID, newCust, priority);
             
             qManager.addTicket(newTicket);
+            qManager.sortQueue(); // Explicitly sort the backend to keep it perfectly aligned with UI
             DatabaseHelper.saveTicketToDB(name, priority);
             
-            addCardToVisualQueue(newTicket);
+            // Check the backend index, and force the visual card into that exact slot
+            int exactIndex = qManager.getWaitingList().indexOf(newTicket);
+            addCardToVisualQueue(newTicket, exactIndex);
             
             ticketCounterID++;
             nameInput.clear();
@@ -119,12 +123,13 @@ public class BankGUI extends Application {
         primaryStage.show();
     }
 
-    private void addCardToVisualQueue(Ticket ticket) {
+    private void addCardToVisualQueue(Ticket ticket, int insertIndex) {
         HBox card = new HBox(20);
         card.setAlignment(Pos.CENTER_LEFT);
         card.setPadding(new Insets(15, 20, 15, 20));
         
-        String borderColor = ticket.getPriority() == 1 ? "#fbbf24" : "#334155";
+        // VIP priority is 2
+        String borderColor = ticket.getPriority() == 2 ? "#fbbf24" : "#334155";
         card.setStyle("-fx-background-color: #1e293b; -fx-background-radius: 10; -fx-border-color: " + borderColor + "; -fx-border-radius: 10; -fx-border-width: 2;");
         
         DropShadow shadow = new DropShadow(10, Color.rgb(0,0,0,0.3));
@@ -139,24 +144,17 @@ public class BankGUI extends Application {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         
-        Label statusLbl = new Label(ticket.getPriority() == 1 ? "VIP" : "REG");
+        Label statusLbl = new Label(ticket.getPriority() == 2 ? "VIP" : "REG");
         statusLbl.setStyle("-fx-text-fill: " + borderColor + "; -fx-font-weight: bold; -fx-font-size: 14px;");
 
         card.getChildren().addAll(idLbl, nameLbl, spacer, statusLbl);
 
-        int insertIndex = visualQueueList.getChildren().size();
-        if (ticket.getPriority() == 1) { 
-            insertIndex = 0;
-            for (int i = 0; i < visualQueueList.getChildren().size(); i++) {
-                HBox existingCard = (HBox) visualQueueList.getChildren().get(i);
-                Label existingStatus = (Label) existingCard.getChildren().get(3);
-                if (existingStatus.getText().equals("REG")) {
-                    insertIndex = i;
-                    break;
-                } else { insertIndex = i + 1; }
-            }
+        // Place the card exactly where the backend queue says it belongs
+        if (insertIndex >= 0 && insertIndex <= visualQueueList.getChildren().size()) {
+            visualQueueList.getChildren().add(insertIndex, card);
+        } else {
+            visualQueueList.getChildren().add(card);
         }
-        visualQueueList.getChildren().add(insertIndex, card);
 
         card.setTranslateX(100);
         card.setOpacity(0);
@@ -187,7 +185,7 @@ public class BankGUI extends Application {
 
     private void updateNowServing(Ticket t) {
         servingNameLabel.setText(t.getOwner().getName()); // FIXED: getOwner()
-        servingTicketLabel.setText("Ticket #" + t.getTicketNo() + " (" + (t.getPriority() == 1 ? "VIP" : "Regular") + ")");
+        servingTicketLabel.setText("Ticket #" + t.getTicketNo() + " (" + (t.getPriority() == 2 ? "VIP" : "Regular") + ")");
         
         FadeTransition ft = new FadeTransition(Duration.millis(150), nowServingContainer);
         ft.setFromValue(0.5);
